@@ -127,6 +127,8 @@ app.use('*', async (c, next) => {
   const redactedSearch = redactSensitiveParams(url);
   console.log(`[REQ] ${c.req.method} ${url.pathname}${redactedSearch}`);
   console.log(`[REQ] Has ANTHROPIC_API_KEY: ${!!c.env.ANTHROPIC_API_KEY}`);
+  console.log(`[REQ] Has MOLTBOT_GATEWAY_TOKEN: ${!!c.env.MOLTBOT_GATEWAY_TOKEN}`);
+  console.log(`[REQ] MOLTBOT_GATEWAY_TOKEN length: ${c.env.MOLTBOT_GATEWAY_TOKEN?.length ?? 0}`);
   console.log(`[REQ] DEV_MODE: ${c.env.DEV_MODE}`);
   console.log(`[REQ] DEBUG_ROUTES: ${c.env.DEBUG_ROUTES}`);
   await next();
@@ -285,9 +287,9 @@ app.all('*', async (c) => {
     const redactedSearch = redactSensitiveParams(url);
 
     console.log('[WS] Proxying WebSocket connection to Moltbot');
-    if (debugLogs) {
-      console.log('[WS] URL:', url.pathname + redactedSearch);
-    }
+    console.log('[WS] Original URL:', url.pathname + url.search);
+    console.log('[WS] Has token in URL:', url.searchParams.has('token'));
+    console.log('[WS] Has MOLTBOT_GATEWAY_TOKEN env:', !!c.env.MOLTBOT_GATEWAY_TOKEN);
 
     // Inject gateway token into WebSocket request if not already present.
     // CF Access redirects strip query params, so authenticated users lose ?token=.
@@ -297,9 +299,15 @@ app.all('*', async (c) => {
       const tokenUrl = new URL(url.toString());
       tokenUrl.searchParams.set('token', c.env.MOLTBOT_GATEWAY_TOKEN);
       wsRequest = new Request(tokenUrl.toString(), request);
+      console.log('[WS] Injected token, new URL path+search:', tokenUrl.pathname + '?token=' + c.env.MOLTBOT_GATEWAY_TOKEN.slice(0, 4) + '...');
+    } else if (!c.env.MOLTBOT_GATEWAY_TOKEN) {
+      console.log('[WS] WARNING: No MOLTBOT_GATEWAY_TOKEN set, cannot inject token!');
+    } else {
+      console.log('[WS] Token already in URL, not injecting');
     }
 
     // Get WebSocket connection to the container
+    console.log('[WS] Calling sandbox.wsConnect with port:', MOLTBOT_PORT);
     const containerResponse = await sandbox.wsConnect(wsRequest, MOLTBOT_PORT);
     console.log('[WS] wsConnect response status:', containerResponse.status);
 
@@ -394,9 +402,7 @@ app.all('*', async (c) => {
     });
 
     containerWs.addEventListener('close', (event) => {
-      if (debugLogs) {
-        console.log('[WS] Container closed:', event.code, event.reason);
-      }
+      console.log('[WS] Container closed - code:', event.code, 'raw reason:', event.reason);
       // Transform the close reason (truncate to 123 bytes max for WebSocket spec)
       let reason = transformErrorMessage(event.reason, url.host);
       if (reason.length > 123) {
