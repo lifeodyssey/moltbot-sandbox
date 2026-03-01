@@ -20,6 +20,7 @@ import puppeteer, { type Browser, type Page } from '@cloudflare/puppeteer';
  * - Input: dispatchMouseEvent, dispatchKeyEvent, insertText
  * - Network: enable, disable, setCacheDisabled
  * - Emulation: setDeviceMetricsOverride, setUserAgentOverride
+ * - BrowserSession (custom): save, restore, list, delete (persistent login via R2)
  */
 const cdp = new Hono<AppEnv>();
 
@@ -148,6 +149,11 @@ cdp.get('/', async (c) => {
         'Emulation.setTouchEmulationEnabled',
         'Emulation.setEmulatedMedia',
         'Emulation.setDefaultBackgroundColorOverride',
+        // BrowserSession (custom - persistent login state via R2)
+        'BrowserSession.save',
+        'BrowserSession.restore',
+        'BrowserSession.list',
+        'BrowserSession.delete',
       ],
     });
   }
@@ -419,7 +425,7 @@ async function initCDPSession(ws: WebSocket, env: MoltbotEnv): Promise<void> {
     console.log('[CDP] Request:', request.method, request.params);
 
     try {
-      const result = await handleCDPMethod(session, request.method, request.params || {}, ws);
+      const result = await handleCDPMethod(session, request.method, request.params || {}, ws, env);
       sendResponse(ws, request.id, result);
     } catch (err) {
       console.error('[CDP] Method error:', request.method, err);
@@ -452,6 +458,7 @@ async function handleCDPMethod(
   method: string,
   params: Record<string, unknown>,
   ws: WebSocket,
+  env: MoltbotEnv,
 ): Promise<unknown> {
   const [domain, command] = method.split('.');
 
@@ -492,6 +499,9 @@ async function handleCDPMethod(
     case 'Fetch':
       if (!page) throw new Error(`Target not found: ${targetId}`);
       return handleFetch(session, page, command, params, ws);
+
+    case 'BrowserSession':
+      return handleBrowserSession(session, command, params, env);
 
     default:
       throw new Error(`Unknown domain: ${domain}`);
@@ -1874,6 +1884,213 @@ async function handleFetch(
 
     default:
       throw new Error(`Unknown Fetch method: ${command}`);
+  }
+}
+
+/**
+ * BrowserSession domain handlers (custom - persistent login state via R2)
+ *
+ * Saves/restores cookies and localStorage to R2 so login state persists
+ * across CDP sessions. Cloudflare Browser Rendering is ephemeral — each
+ * connection creates a fresh browser. This bridges the gap by storing
+ * session state in the R2 bucket.
+ *
+ * Usage flow:
+ *  1. Navigate to site, log in (manually or via AI Agent)
+ *  2. BrowserSession.save { name: "github" }
+ *  3. Disconnect, reconnect later
+ *  4. BrowserSession.restore { name: "github" }
+ *  5. Navigate to site — logged in!
+ */
+async function handleBrowserSession(
+  session: CDPSession,
+  command: string,
+  params: Record<string, unknown>,
+  env: MoltbotEnv,
+): Promise<unknown> {
+  const bucket = env.MOLTBOT_BUCKET;
+  if (!bucket) {
+    throw new Error('R2 storage (MOLTBOT_BUCKET) not configured — set up R2 bucket binding first');
+  }
+
+  switch (command) {
+    case 'save': {
+      const name = params.name as string;
+      if (!name) throw new Error('name parameter is required');
+      if (!/^[\w.-]+$/.test(name)) throw new Error('name must be alphanumeric (with dots, dashes, underscores)');
+
+      const targetId = (params.targetId as string) || session.defaultTargetId;
+      const page = session.pages.get(targetId);
+      if (!page) throw new Error(`Target not found: ${targetId}`);
+
+      // Capture cookies from all domains
+      const cookies = await page.cookies();
+
+      // Capture current URL
+      const url = page.url();
+
+      // Capture localStorage for the current origin
+      let localStorage: Record<string, string> = {};
+      try {
+        localStorage = (await page.evaluate(() => {
+          const data: Record<string, string> = {};
+          for (let i = 0; i < window.localStorage.length; i++) {
+            const key = window.localStorage.key(i);
+            if (key !== null) {
+              data[key] = window.localStorage.getItem(key) || '';
+            }
+          }
+          return data;
+        })) as Record<string, string>;
+      } catch (e) {
+        console.log('[CDP] Could not read localStorage (page may be about:blank):', e);
+      }
+
+      // Capture sessionStorage too (some sites use it for auth tokens)
+      let sessionStorage: Record<string, string> = {};
+      try {
+        sessionStorage = (await page.evaluate(() => {
+          const data: Record<string, string> = {};
+          for (let i = 0; i < window.sessionStorage.length; i++) {
+            const key = window.sessionStorage.key(i);
+            if (key !== null) {
+              data[key] = window.sessionStorage.getItem(key) || '';
+            }
+          }
+          return data;
+        })) as Record<string, string>;
+      } catch (e) {
+        console.log('[CDP] Could not read sessionStorage:', e);
+      }
+
+      const sessionData = {
+        name,
+        savedAt: new Date().toISOString(),
+        url,
+        cookies,
+        localStorage,
+        sessionStorage,
+      };
+
+      const key = `browser-sessions/${name}.json`;
+      await bucket.put(key, JSON.stringify(sessionData, null, 2));
+
+      console.log(
+        `[CDP] Session saved: ${name} (${cookies.length} cookies, ${Object.keys(localStorage).length} localStorage, ${Object.keys(sessionStorage).length} sessionStorage)`,
+      );
+
+      return {
+        success: true,
+        name,
+        url,
+        cookieCount: cookies.length,
+        localStorageCount: Object.keys(localStorage).length,
+        sessionStorageCount: Object.keys(sessionStorage).length,
+      };
+    }
+
+    case 'restore': {
+      const name = params.name as string;
+      if (!name) throw new Error('name parameter is required');
+
+      const key = `browser-sessions/${name}.json`;
+      const object = await bucket.get(key);
+      if (!object) throw new Error(`Session not found: ${name}`);
+
+      const sessionData = JSON.parse(await object.text());
+
+      const targetId = (params.targetId as string) || session.defaultTargetId;
+      const page = session.pages.get(targetId);
+      if (!page) throw new Error(`Target not found: ${targetId}`);
+
+      // Restore cookies (works regardless of current page URL since cookies have domain info)
+      let cookiesRestored = 0;
+      if (sessionData.cookies?.length > 0) {
+        // Filter out expired cookies
+        const now = Date.now() / 1000;
+        const validCookies = sessionData.cookies.filter(
+          (c: { expires?: number; session?: boolean }) => !c.expires || c.expires === -1 || c.expires > now,
+        );
+        if (validCookies.length > 0) {
+          await page.setCookie(...validCookies);
+          cookiesRestored = validCookies.length;
+        }
+      }
+
+      // Restore localStorage (only works if navigated to the same origin)
+      let localStorageRestored = false;
+      if (sessionData.localStorage && Object.keys(sessionData.localStorage).length > 0) {
+        try {
+          await page.evaluate((data: Record<string, string>) => {
+            for (const [k, v] of Object.entries(data)) {
+              window.localStorage.setItem(k, v);
+            }
+          }, sessionData.localStorage);
+          localStorageRestored = true;
+        } catch (e) {
+          console.log('[CDP] Could not restore localStorage (navigate to saved URL first):', e);
+        }
+      }
+
+      // Restore sessionStorage
+      let sessionStorageRestored = false;
+      if (sessionData.sessionStorage && Object.keys(sessionData.sessionStorage).length > 0) {
+        try {
+          await page.evaluate((data: Record<string, string>) => {
+            for (const [k, v] of Object.entries(data)) {
+              window.sessionStorage.setItem(k, v);
+            }
+          }, sessionData.sessionStorage);
+          sessionStorageRestored = true;
+        } catch (e) {
+          console.log('[CDP] Could not restore sessionStorage:', e);
+        }
+      }
+
+      console.log(`[CDP] Session restored: ${name} (${cookiesRestored} cookies)`);
+
+      return {
+        success: true,
+        name,
+        savedAt: sessionData.savedAt,
+        url: sessionData.url,
+        cookiesRestored,
+        localStorageRestored,
+        localStorageCount: Object.keys(sessionData.localStorage || {}).length,
+        sessionStorageRestored,
+        sessionStorageCount: Object.keys(sessionData.sessionStorage || {}).length,
+        hint: localStorageRestored
+          ? 'Reload the page to apply restored state'
+          : `Navigate to ${sessionData.url} then reload to apply localStorage`,
+      };
+    }
+
+    case 'list': {
+      const prefix = 'browser-sessions/';
+      const listed = await bucket.list({ prefix });
+
+      const sessions = listed.objects.map((obj) => ({
+        name: obj.key.replace(prefix, '').replace('.json', ''),
+        size: obj.size,
+        uploaded: obj.uploaded.toISOString(),
+      }));
+
+      return { sessions };
+    }
+
+    case 'delete': {
+      const name = params.name as string;
+      if (!name) throw new Error('name parameter is required');
+
+      const key = `browser-sessions/${name}.json`;
+      await bucket.delete(key);
+
+      console.log(`[CDP] Session deleted: ${name}`);
+      return { success: true, name };
+    }
+
+    default:
+      throw new Error(`Unknown BrowserSession method: ${command}`);
   }
 }
 
