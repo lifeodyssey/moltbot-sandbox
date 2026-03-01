@@ -289,13 +289,18 @@ app.all('*', async (c) => {
       console.log('[WS] URL:', url.pathname + redactedSearch);
     }
 
-    // NOTE: We no longer inject gateway token into the WebSocket URL because
-    // sandbox.wsConnect() does not forward URL query parameters to the container.
-    // Authentication is handled by Cloudflare Access at the Worker level.
-    // The gateway in the container runs without --token flag.
+    // Inject gateway token server-side: CF Access redirects strip query params,
+    // so authenticated users lose ?token=. Since the user already passed CF Access,
+    // we inject the token from the Worker secret.
+    let wsRequest = request;
+    if (c.env.MOLTBOT_GATEWAY_TOKEN && !url.searchParams.has('token')) {
+      const tokenUrl = new URL(url.toString());
+      tokenUrl.searchParams.set('token', c.env.MOLTBOT_GATEWAY_TOKEN);
+      wsRequest = new Request(tokenUrl.toString(), request);
+    }
 
     // Get WebSocket connection to the container
-    const containerResponse = await sandbox.wsConnect(request, MOLTBOT_PORT);
+    const containerResponse = await sandbox.wsConnect(wsRequest, MOLTBOT_PORT);
     console.log('[WS] wsConnect response status:', containerResponse.status);
 
     // Get the container-side WebSocket

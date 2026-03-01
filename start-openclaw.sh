@@ -320,10 +320,12 @@ rm -f "$CONFIG_DIR/gateway.lock" 2>/dev/null || true
 
 echo "Dev mode: ${OPENCLAW_DEV_MODE:-false}"
 
-# NOTE: We no longer pass --token to the gateway because Cloudflare's
-# sandbox.wsConnect() does not forward URL query parameters to the container,
-# so the gateway never receives the token from the WebSocket handshake URL.
-# Authentication is handled by Cloudflare Access at the Worker level instead.
-# The token is still stored in the config (see patching above) for reference.
-echo "Starting gateway (auth handled by CF Access at Worker level)..."
-exec openclaw gateway --port 18789 --verbose --allow-unconfigured --bind lan
+if [ -n "$OPENCLAW_GATEWAY_TOKEN" ]; then
+    echo "Starting gateway with token auth..."
+    exec openclaw gateway --port 18789 --verbose \
+      --allow-unconfigured --bind lan --token "$OPENCLAW_GATEWAY_TOKEN"
+else
+    echo "Starting gateway with device pairing (no token)..."
+    exec openclaw gateway --port 18789 --verbose \
+      --allow-unconfigured --bind lan
+fi
