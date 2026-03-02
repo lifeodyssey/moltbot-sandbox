@@ -2,6 +2,17 @@
 
 Fork of [cloudflare/moltworker](https://github.com/cloudflare/moltworker). Runs [OpenClaw](https://github.com/openclaw/openclaw) personal AI assistant in a Cloudflare Sandbox container.
 
+## Troubleshooting Way of Working
+
+这个项目是 OpenClaw 的部署封装，遇到问题时不要直接跳进代码里猜。按以下顺序排查：
+
+1. **先看本项目的 README 和 CLAUDE.md** — 很多坑已经踩过并记录了。
+2. **去看 OpenClaw 上游是怎么做的** — 这个项目只是套壳，核心逻辑在 OpenClaw。查看 [OpenClaw 文档](https://github.com/openclaw/openclaw) 和它的 provider 配置方式，往往能直接找到正确的参数和路径。
+3. **搜索外部文档** — 比如 CF AI Gateway 的 provider 路径格式、Google Gemini API 的端点规范等。用 curl 验证假设。
+4. **最后才看代码改代码** — 在前三步确认了正确方案后，改动通常很小很精准。
+
+反面教训：直接看代码 → 猜测路径 → 反复试错，会浪费大量时间。先搞清楚"正确答案是什么"，再去改代码。
+
 ## Architecture
 
 ```
