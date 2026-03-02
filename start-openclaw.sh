@@ -194,12 +194,15 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     if (accountId && gatewayId) {
         baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
         if (gwProvider === 'workers-ai') baseUrl += '/v1';
+        if (gwProvider === 'google-ai-studio') baseUrl += '/v1beta';
     } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
         baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
     }
 
     if (baseUrl && apiKey) {
-        const api = gwProvider === 'anthropic' ? 'anthropic-messages' : 'openai-completions';
+        const api = gwProvider === 'anthropic' ? 'anthropic-messages'
+                  : gwProvider === 'google-ai-studio' ? 'google-generative-ai'
+                  : 'openai-completions';
         const providerName = 'cf-ai-gw-' + gwProvider;
 
         config.models = config.models || {};
