@@ -227,6 +227,40 @@ if (process.env.CF_AI_GATEWAY_MODEL) {
     }
 }
 
+// Google Gemini native API provider (from OpenClaw config)
+if (process.env.GOOGLE_API_KEY) {
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers['google'] = {
+        baseUrl: 'https://generativelanguage.googleapis.com/v1beta',
+        api: 'google-generative-ai',
+        apiKey: process.env.GOOGLE_API_KEY,
+        models: [
+            { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro Preview', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 65536 },
+            { id: 'gemini-3-flash-preview', name: 'Gemini 3 Flash Preview', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 65536 },
+            { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 65536 },
+            { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 65536 },
+            { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 1048576, maxTokens: 8192 }
+        ]
+    };
+    console.log('Added Google Gemini native API provider');
+}
+
+// Moonshot AI (Kimi) provider (from OpenClaw config)
+if (process.env.MOONSHOT_API_KEY) {
+    config.models = config.models || {};
+    config.models.providers = config.models.providers || {};
+    config.models.providers['moonshot'] = {
+        baseUrl: 'https://api.moonshot.ai/v1',
+        api: 'openai-completions',
+        apiKey: process.env.MOONSHOT_API_KEY,
+        models: [
+            { id: 'kimi-k2.5', name: 'Kimi K2.5', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 256000, maxTokens: 8192 }
+        ]
+    };
+    console.log('Added Moonshot AI (Kimi) provider');
+}
+
 // Telegram configuration
 // Overwrite entire channel object to drop stale keys from old R2 backups
 // that would fail OpenClaw's strict config validation (see #47)
