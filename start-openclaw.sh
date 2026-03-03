@@ -246,19 +246,19 @@ if (process.env.GOOGLE_API_KEY) {
     console.log('Added Google Gemini native API provider');
 }
 
-// Moonshot AI (Kimi) provider (from OpenClaw config)
+// Kimi Coding API provider (from OpenClaw config)
 if (process.env.MOONSHOT_API_KEY) {
     config.models = config.models || {};
     config.models.providers = config.models.providers || {};
-    config.models.providers['moonshot'] = {
-        baseUrl: 'https://api.moonshot.ai/v1',
-        api: 'openai-completions',
+    config.models.providers['kimi-coding'] = {
+        baseUrl: 'https://api.kimi.com/coding/',
+        api: 'anthropic-messages',
         apiKey: process.env.MOONSHOT_API_KEY,
         models: [
-            { id: 'kimi-k2.5', name: 'Kimi K2.5', reasoning: false, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 256000, maxTokens: 8192 }
+            { id: 'k2p5', name: 'Kimi for Coding', reasoning: true, input: ['text', 'image'], cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 }, contextWindow: 262144, maxTokens: 32768 }
         ]
     };
-    console.log('Added Moonshot AI (Kimi) provider');
+    console.log('Added Kimi Coding API provider');
 }
 
 // Telegram configuration
