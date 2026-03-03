@@ -34,6 +34,14 @@ describe('buildEnvVars', () => {
     expect(result.CF_AI_GATEWAY_GATEWAY_ID).toBe('my-gateway-id');
   });
 
+  it('passes CF_AIG_TOKEN when set', () => {
+    const env = createMockEnv({
+      CF_AIG_TOKEN: 'test-aig-token',
+    });
+    const result = buildEnvVars(env);
+    expect(result.CF_AIG_TOKEN).toBe('test-aig-token');
+  });
+
   it('passes Cloudflare AI Gateway alongside direct Anthropic key', () => {
     const env = createMockEnv({
       CLOUDFLARE_AI_GATEWAY_API_KEY: 'cf-gw-key',

@@ -19,6 +19,9 @@ export function buildEnvVars(env: MoltbotEnv): Record<string, string> {
   if (env.CF_AI_GATEWAY_GATEWAY_ID) {
     envVars.CF_AI_GATEWAY_GATEWAY_ID = env.CF_AI_GATEWAY_GATEWAY_ID;
   }
+  if (env.CF_AIG_TOKEN) {
+    envVars.CF_AIG_TOKEN = env.CF_AIG_TOKEN;
+  }
 
   // Direct provider keys
   if (env.ANTHROPIC_API_KEY) envVars.ANTHROPIC_API_KEY = env.ANTHROPIC_API_KEY;

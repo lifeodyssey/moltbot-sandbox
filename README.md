@@ -368,9 +368,13 @@ npx wrangler secret put CF_AI_GATEWAY_ACCOUNT_ID
 
 # Your AI Gateway ID (from the gateway overview page)
 npx wrangler secret put CF_AI_GATEWAY_GATEWAY_ID
+
+# Optional: If you enabled AI Gateway "Authenticated Gateway",
+# set the token used for the `cf-aig-authorization` header.
+npx wrangler secret put CF_AIG_TOKEN
 ```
 
-All three are required. OpenClaw constructs the gateway URL from the account ID and gateway ID, and passes the API key to the upstream provider through the gateway.
+The first three are required. OpenClaw constructs the gateway URL from the account ID and gateway ID, and passes the API key to the upstream provider through the gateway.
 
 3. Redeploy:
 
@@ -402,7 +406,7 @@ This works with any [AI Gateway provider](https://developers.cloudflare.com/ai-g
 
 #### Workers AI with Unified Billing
 
-With [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/), you can use Workers AI models without a separate provider API key — Cloudflare bills you directly. Set `CLOUDFLARE_AI_GATEWAY_API_KEY` to your [AI Gateway authentication token](https://developers.cloudflare.com/ai-gateway/configuration/authentication/) (the `cf-aig-authorization` token).
+With [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/), you can use Workers AI models without a separate provider API key — Cloudflare bills you directly. Set `CLOUDFLARE_AI_GATEWAY_API_KEY` to a Cloudflare API token, and (if you enabled AI Gateway "Authenticated Gateway") set `CF_AIG_TOKEN` as well.
 
 ### Legacy AI Gateway Configuration
 
@@ -412,9 +416,10 @@ The previous `AI_GATEWAY_API_KEY` + `AI_GATEWAY_BASE_URL` approach is still supp
 
 | Secret | Required | Description |
 |--------|----------|-------------|
-| `CLOUDFLARE_AI_GATEWAY_API_KEY` | Yes* | Your AI provider's API key, passed through the gateway (e.g., your Anthropic API key). Requires `CF_AI_GATEWAY_ACCOUNT_ID` and `CF_AI_GATEWAY_GATEWAY_ID` |
+| `CLOUDFLARE_AI_GATEWAY_API_KEY` | Yes* | Your AI provider's API key, passed through the gateway (e.g., Anthropic/OpenAI/Gemini). Requires `CF_AI_GATEWAY_ACCOUNT_ID` and `CF_AI_GATEWAY_GATEWAY_ID` |
 | `CF_AI_GATEWAY_ACCOUNT_ID` | Yes* | Your Cloudflare account ID (used to construct the gateway URL) |
 | `CF_AI_GATEWAY_GATEWAY_ID` | Yes* | Your AI Gateway ID (used to construct the gateway URL) |
+| `CF_AIG_TOKEN` | No | AI Gateway "Authenticated Gateway" token for the `cf-aig-authorization` header (only needed if you enabled gateway authentication) |
 | `CF_AI_GATEWAY_MODEL` | No | Override default model: `provider/model-id` (e.g. `workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast`). See [Choosing a Model](#choosing-a-model) |
 | `ANTHROPIC_API_KEY` | Yes* | Direct Anthropic API key (alternative to AI Gateway) |
 | `ANTHROPIC_BASE_URL` | No | Direct Anthropic API base URL |

@@ -11,6 +11,7 @@ export interface MoltbotEnv {
   CF_AI_GATEWAY_ACCOUNT_ID?: string; // Cloudflare account ID for AI Gateway
   CF_AI_GATEWAY_GATEWAY_ID?: string; // AI Gateway ID
   CLOUDFLARE_AI_GATEWAY_API_KEY?: string; // API key for requests through the gateway
+  CF_AIG_TOKEN?: string; // Optional "Authenticated Gateway" token for cf-aig-authorization header
   CF_AI_GATEWAY_MODEL?: string; // Override model: "provider/model-id" e.g. "workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast"
   // Legacy AI Gateway configuration (still supported for backward compat)
   AI_GATEWAY_API_KEY?: string; // API key for the provider configured in AI Gateway

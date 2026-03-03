@@ -180,45 +180,50 @@ if (process.env.OPENCLAW_DEV_MODE === 'true') {
 //   workers-ai/@cf/meta/llama-3.3-70b-instruct-fp8-fast
 //   openai/gpt-4o
 //   anthropic/claude-sonnet-4-5
+//   google-ai-studio/gemini-2.5-flash
 if (process.env.CF_AI_GATEWAY_MODEL) {
-    const raw = process.env.CF_AI_GATEWAY_MODEL;
+    const raw = String(process.env.CF_AI_GATEWAY_MODEL).trim();
     const slashIdx = raw.indexOf('/');
-    const gwProvider = raw.substring(0, slashIdx);
-    const modelId = raw.substring(slashIdx + 1);
-
-    const accountId = process.env.CF_AI_GATEWAY_ACCOUNT_ID;
-    const gatewayId = process.env.CF_AI_GATEWAY_GATEWAY_ID;
-    const apiKey = process.env.CLOUDFLARE_AI_GATEWAY_API_KEY;
-
-    let baseUrl;
-    if (accountId && gatewayId) {
-        baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
-        if (gwProvider === 'workers-ai') baseUrl += '/v1';
-        if (gwProvider === 'google-ai-studio') baseUrl += '/v1beta';
-    } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
-        baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
-    }
-
-    if (baseUrl && apiKey) {
-        const api = gwProvider === 'anthropic' ? 'anthropic-messages'
-                  : gwProvider === 'google-ai-studio' ? 'google-generative-ai'
-                  : 'openai-completions';
-        const providerName = 'cf-ai-gw-' + gwProvider;
-
-        config.models = config.models || {};
-        config.models.providers = config.models.providers || {};
-        config.models.providers[providerName] = {
-            baseUrl: baseUrl,
-            apiKey: apiKey,
-            api: api,
-            models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
-        };
-        config.agents = config.agents || {};
-        config.agents.defaults = config.agents.defaults || {};
-        config.agents.defaults.model = { primary: providerName + '/' + modelId };
-        console.log('AI Gateway model override: provider=' + providerName + ' model=' + modelId + ' via ' + baseUrl);
+    if (slashIdx <= 0 || slashIdx === raw.length - 1) {
+        console.warn('CF_AI_GATEWAY_MODEL must be in the form "provider/model-id" (got: ' + raw + ')');
     } else {
-        console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
+        const gwProvider = raw.substring(0, slashIdx);
+        const modelId = raw.substring(slashIdx + 1);
+
+        const accountId = process.env.CF_AI_GATEWAY_ACCOUNT_ID;
+        const gatewayId = process.env.CF_AI_GATEWAY_GATEWAY_ID;
+        const apiKey = process.env.CLOUDFLARE_AI_GATEWAY_API_KEY;
+
+        let baseUrl;
+        if (accountId && gatewayId) {
+            baseUrl = 'https://gateway.ai.cloudflare.com/v1/' + accountId + '/' + gatewayId + '/' + gwProvider;
+            // Workers AI via OpenAI-compatible endpoints uses /v1
+            if (gwProvider === 'workers-ai') baseUrl += '/v1';
+        } else if (gwProvider === 'workers-ai' && process.env.CF_ACCOUNT_ID) {
+            baseUrl = 'https://api.cloudflare.com/client/v4/accounts/' + process.env.CF_ACCOUNT_ID + '/ai/v1';
+        }
+
+        if (baseUrl && apiKey) {
+            const api = gwProvider === 'anthropic' ? 'anthropic-messages'
+                      : gwProvider === 'google-ai-studio' ? 'google-generative-ai'
+                      : 'openai-completions';
+            const providerName = 'cf-ai-gw-' + gwProvider;
+
+            config.models = config.models || {};
+            config.models.providers = config.models.providers || {};
+            config.models.providers[providerName] = {
+                baseUrl: baseUrl,
+                apiKey: apiKey,
+                api: api,
+                models: [{ id: modelId, name: modelId, contextWindow: 131072, maxTokens: 8192 }],
+            };
+            config.agents = config.agents || {};
+            config.agents.defaults = config.agents.defaults || {};
+            config.agents.defaults.model = { primary: providerName + '/' + modelId };
+            console.log('AI Gateway model override: provider=' + providerName + ' model=' + modelId + ' via ' + baseUrl);
+        } else {
+            console.warn('CF_AI_GATEWAY_MODEL set but missing required config (account ID, gateway ID, or API key)');
+        }
     }
 }
 
@@ -261,6 +266,39 @@ if (process.env.SLACK_BOT_TOKEN && process.env.SLACK_APP_TOKEN) {
         appToken: process.env.SLACK_APP_TOKEN,
         enabled: true,
     };
+}
+
+// Cloudflare AI Gateway "Authenticated Gateway" support:
+// If enabled, requests must include the cf-aig-authorization header.
+// Patch all providers that route through gateway.ai.cloudflare.com.
+if (process.env.CF_AIG_TOKEN) {
+    const rawToken = String(process.env.CF_AIG_TOKEN).trim();
+    if (rawToken !== '') {
+        const bearer = rawToken.toLowerCase().startsWith('bearer ') ? rawToken : 'Bearer ' + rawToken;
+
+        const providers = config.models?.providers;
+        if (providers && typeof providers === 'object') {
+            let applied = 0;
+            for (const provider of Object.values(providers)) {
+                if (!provider || typeof provider !== 'object') continue;
+                const baseUrl = provider.baseUrl;
+                const isAiGateway = typeof baseUrl === 'string' && baseUrl.includes('gateway.ai.cloudflare.com/v1/');
+                if (!isAiGateway) continue;
+
+                provider.headers = provider.headers && typeof provider.headers === 'object' ? provider.headers : {};
+                provider.headers['cf-aig-authorization'] = bearer;
+                applied++;
+            }
+
+            if (applied > 0) {
+                console.log('Applied cf-aig-authorization header to ' + applied + ' provider(s)');
+            } else {
+                console.warn('CF_AIG_TOKEN is set but no AI Gateway providers were found to patch');
+            }
+        } else {
+            console.warn('CF_AIG_TOKEN is set but config.models.providers is missing');
+        }
+    }
 }
 
 fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
