@@ -164,9 +164,17 @@ if (process.env.OPENCLAW_GATEWAY_TOKEN) {
     config.gateway.auth.token = process.env.OPENCLAW_GATEWAY_TOKEN;
 }
 
+// Control UI configuration
+config.gateway.controlUi = config.gateway.controlUi || {};
+
 if (process.env.OPENCLAW_DEV_MODE === 'true') {
-    config.gateway.controlUi = config.gateway.controlUi || {};
     config.gateway.controlUi.allowInsecureAuth = true;
+}
+
+// Allow Worker domain to access Control UI
+if (process.env.WORKER_URL) {
+    config.gateway.controlUi.allowedOrigins = [process.env.WORKER_URL];
+    console.log('Control UI allowed origin:', process.env.WORKER_URL);
 }
 
 // Legacy AI Gateway base URL override:
