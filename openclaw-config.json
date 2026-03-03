@@ -1,0 +1,114 @@
+{
+  "meta": {
+    "lastTouchedVersion": "2026.2.3",
+    "lastTouchedAt": "2026-03-03T11:21:00.000Z"
+  },
+  "wizard": {
+    "lastRunAt": "2026-03-01T11:02:41.942Z",
+    "lastRunVersion": "2026.2.3",
+    "lastRunCommand": "onboard",
+    "lastRunMode": "local"
+  },
+  "update": {
+    "checkOnStart": true
+  },
+  "models": {
+    "providers": {
+      "cf-ai-gw-google-ai-studio": {
+        "baseUrl": "https://gateway.ai.cloudflare.com/v1/021233c1880a43aa68565496100e1f8c/my-gateway/google-ai-studio/v1beta",
+        "apiKey": "L4XQaRyi_uqj8rrIg7iVCRehYUadswbAjZeUVZMG",
+        "api": "google-generative-ai",
+        "models": [
+          {
+            "id": "gemini-3.1-pro-preview",
+            "name": "Gemini 3.1 Pro Preview",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-3-flash-preview",
+            "name": "Gemini 3 Flash Preview",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-3-pro-preview",
+            "name": "Gemini 3 Pro Preview",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-2.5-pro",
+            "name": "Gemini 2.5 Pro",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-2.5-flash",
+            "name": "Gemini 2.5 Flash",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-2.5-flash-lite",
+            "name": "Gemini 2.5 Flash Lite",
+            "contextWindow": 1048576,
+            "maxTokens": 65536
+          },
+          {
+            "id": "gemini-2.0-flash",
+            "name": "Gemini 2.0 Flash",
+            "contextWindow": 1048576,
+            "maxTokens": 8192
+          }
+        ]
+      }
+    }
+  },
+  "agents": {
+    "defaults": {
+      "model": {
+        "primary": "google/gemini-3-flash-preview"
+      },
+      "workspace": "/root/.openclaw/workspace",
+      "contextPruning": {
+        "mode": "cache-ttl",
+        "ttl": "1h"
+      },
+      "compaction": {
+        "mode": "safeguard"
+      },
+      "heartbeat": {
+        "every": "30m"
+      },
+      "maxConcurrent": 4,
+      "subagents": {
+        "maxConcurrent": 8
+      }
+    }
+  },
+  "messages": {
+    "ackReactionScope": "group-mentions"
+  },
+  "commands": {
+    "native": "auto",
+    "nativeSkills": "auto"
+  },
+  "channels": {},
+  "gateway": {
+    "port": 18789,
+    "mode": "local",
+    "bind": "lan",
+    "auth": {
+      "mode": "token",
+      "token": "bb62e018e7179f6bad846c1c96da9c9a94a4afde07ecc9be7dc142e438a26c95"
+    },
+    "trustedProxies": [
+      "10.1.0.0"
+    ],
+    "tailscale": {
+      "mode": "off",
+      "resetOnExit": false
+    }
+  }
+}
