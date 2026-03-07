@@ -40,6 +40,9 @@ Thumbs.db
 # Veta agent memory
 .veta/
 
+# Serena IDE
+.serena/
+
 # greger.el conversation
 *.greger
 

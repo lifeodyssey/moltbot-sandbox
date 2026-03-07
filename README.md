@@ -1,5 +1,7 @@
 # OpenClaw on Cloudflare Workers
 
+> **Note:** This is a personal fork based on [cloudflare/moltworker](https://github.com/cloudflare/moltworker). This repository documents my deployment configuration and troubleshooting experiences. See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md) for common deployment issues and solutions.
+
 Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot, formerly Clawdbot) personal AI assistant in a [Cloudflare Sandbox](https://developers.cloudflare.com/sandbox/).
 
 ![moltworker architecture](./assets/logo.png)
