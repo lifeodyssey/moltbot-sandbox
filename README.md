@@ -56,7 +56,30 @@ This project packages OpenClaw to run in a [Cloudflare Sandbox](https://develope
 
 ![moltworker architecture](./assets/architecture.png)
 
-## Quick Start
+## Quick Setup (Automated)
+
+Use the automated setup script for a guided configuration:
+
+```bash
+./setup.sh
+```
+
+This script will:
+- ✅ Generate secure tokens automatically
+- ✅ Configure AI provider (Anthropic or OpenAI)
+- ✅ Set up CDP for browser automation
+- ✅ Configure Cloudflare Access for admin UI
+- ✅ Optionally configure R2 storage
+- ✅ Deploy to Cloudflare Workers
+
+Your tokens will be saved to `.tokens.txt` (not committed to git).
+
+**Prerequisites:**
+- [Workers Paid plan](https://dash.cloudflare.com/?to=/:account/workers/plans) ($5/month) enabled
+- Node.js and npm installed
+- Cloudflare account with wrangler CLI authenticated
+
+## Quick Start (Manual)
 
 _Cloudflare Sandboxes are available on the [Workers Paid plan](https://dash.cloudflare.com/?to=/:account/workers/plans)._
 
