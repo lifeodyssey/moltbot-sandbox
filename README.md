@@ -12,13 +12,20 @@ Run [OpenClaw](https://github.com/openclaw/openclaw) (formerly Moltbot, formerly
 
 ## Requirements
 
-- [Workers Paid plan](https://www.cloudflare.com/plans/developer-platform/) ($5 USD/month) — required for Cloudflare Sandbox containers
-- [Anthropic API key](https://console.anthropic.com/) — for Claude access, or you can use AI Gateway's [Unified Billing](https://developers.cloudflare.com/ai-gateway/features/unified-billing/)
+**Required:**
+- **[Workers Paid plan](https://dash.cloudflare.com/?to=/:account/workers/plans)** ($5 USD/month) — **MUST be enabled before deployment**
+  - Required for Cloudflare Sandbox containers
+  - Enables Browser Rendering for CDP functionality
+  - Visit the link above to enable in your Cloudflare dashboard
+- **AI Provider API key** — Choose one:
+  - [Anthropic](https://console.anthropic.com/) (Claude) - Recommended
+  - [OpenAI](https://platform.openai.com/) (GPT)
+  - [Kimi](https://platform.moonshot.cn/) (Moonshot AI)
+  - [Google Gemini](https://ai.google.dev/)
 
-The following Cloudflare features used by this project have free tiers:
+**Free tier features included:**
 - Cloudflare Access (authentication)
 - Browser Rendering (for browser navigation)
-- AI Gateway (optional, for API routing/analytics)
 - R2 Storage (optional, for persistence)
 
 ## Container Cost Estimate

@@ -5,6 +5,22 @@ echo "🚀 OpenClaw on Cloudflare Workers - Setup Script"
 echo "================================================"
 echo ""
 
+# Prerequisites check
+echo "⚠️  IMPORTANT: Prerequisites"
+echo "----------------------------"
+echo "Before continuing, ensure you have:"
+echo "1. ✅ Workers Paid plan ($5/month) enabled"
+echo "   Visit: https://dash.cloudflare.com/?to=/:account/workers/plans"
+echo "2. ✅ Wrangler CLI authenticated (run: npx wrangler login)"
+echo "3. ✅ An AI provider API key (Anthropic, OpenAI, Kimi, or Gemini)"
+echo ""
+read -p "Have you completed these prerequisites? (y/n): " prereq_check
+if [ "$prereq_check" != "y" ]; then
+    echo "❌ Please complete prerequisites first"
+    exit 1
+fi
+echo ""
+
 # Check dependencies
 echo "📋 Checking dependencies..."
 command -v npx >/dev/null 2>&1 || { echo "❌ npx not found. Please install Node.js"; exit 1; }
@@ -39,7 +55,9 @@ echo "🤖 AI Provider Configuration"
 echo "Choose your AI provider:"
 echo "1) Anthropic (Claude) - Recommended"
 echo "2) OpenAI (GPT)"
-read -p "Enter choice (1 or 2): " ai_choice
+echo "3) Kimi (Moonshot AI)"
+echo "4) Google Gemini"
+read -p "Enter choice (1-4): " ai_choice
 
 if [ "$ai_choice" = "1" ]; then
     read -p "Enter your Anthropic API key: " ANTHROPIC_KEY
@@ -49,6 +67,14 @@ elif [ "$ai_choice" = "2" ]; then
     read -p "Enter your OpenAI API key: " OPENAI_KEY
     echo "$OPENAI_KEY" | npx wrangler secret put OPENAI_API_KEY
     echo "✅ OpenAI API key configured"
+elif [ "$ai_choice" = "3" ]; then
+    read -p "Enter your Kimi API key: " KIMI_KEY
+    echo "$KIMI_KEY" | npx wrangler secret put KIMI_API_KEY
+    echo "✅ Kimi API key configured"
+elif [ "$ai_choice" = "4" ]; then
+    read -p "Enter your Google Gemini API key: " GEMINI_KEY
+    echo "$GEMINI_KEY" | npx wrangler secret put GEMINI_API_KEY
+    echo "✅ Gemini API key configured"
 else
     echo "❌ Invalid choice"
     exit 1
