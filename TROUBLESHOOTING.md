@@ -2,6 +2,28 @@
 
 This guide covers common issues encountered when deploying OpenClaw on Cloudflare Workers and their solutions.
 
+## Changes Not Taking Effect? Export the Live Config First
+
+If you've modified configuration but nothing seems to change, **stop guessing**. Instead, go to
+the OpenClaw control UI, click **"config raw"**, copy the full JSON, and send it to an AI to
+analyze what the container is actually running.
+
+**Why modifying files in this repo or changing options in the OpenClaw UI often has no effect:**
+
+- **R2 restore on startup**: `start-openclaw.sh` restores config from R2 on every container start,
+  overwriting files inside the container. Changes to repo files are not automatically synced into
+  the running container.
+- **`configureAIGateway()` patches config on every startup**: Changes made via the OpenClaw UI
+  options may be silently overwritten by this function when the container restarts.
+- **Result**: What you think you changed and what the container actually runs may be completely different.
+
+**Correct troubleshooting path:**
+1. In the OpenClaw control UI, click "config raw" → copy the JSON
+2. Send the JSON to an AI, describe the configuration you want, and ask it to generate the corrected config
+3. Paste the corrected JSON back into "config raw" and click **Save and Update**
+
+---
+
 ## Common Error: `{"code":2009,"message":"Unauthorized"}`
 
 **Root Cause:** AI model configuration issue, NOT CDP authentication.
