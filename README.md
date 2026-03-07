@@ -45,13 +45,26 @@ Access your deployment at: `https://your-worker.workers.dev/?token=YOUR_TOKEN`
 3. **Required permissions:**
    - Account → Account Settings → Read
    - Account → Workers Scripts → Edit
-   - Account → Cloudflare Containers → Edit
-   - Account → Workers R2 Storage → Edit (if using R2)
-4. Set Account Resources to your account
-5. Copy the token and add to `.env`:
+   - Account → Workers KV Storage → Edit
+   - Account → Workers Routes → Edit
+   - Account → Workers R2 Storage → Edit
+
+4. **Optional permissions** (based on features you use):
+   - Account → Access: Apps and Policies → Read (if using Cloudflare Access for admin UI)
+   - Account → AI Gateway → Edit (if using AI Gateway)
+   - Zone → Zone → Read (if using custom domain)
+
+5. Set Account Resources to your account
+6. Copy the token and add to `.env`:
    ```
    CLOUDFLARE_API_TOKEN=your-token-here
    ```
+
+**Why these permissions:**
+- **Workers Scripts** - Deploy worker, containers, and browser rendering
+- **Workers KV Storage** - Required for Durable Objects (Sandbox class)
+- **Workers Routes** - Configure routing
+- **R2 Storage** - Persistent data storage (strongly recommended)
 
 ### 3. AI Provider API Key
 

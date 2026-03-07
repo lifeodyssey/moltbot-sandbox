@@ -13,6 +13,12 @@ echo "1. ✅ Workers Paid plan ($5/month) enabled"
 echo "   Visit: https://dash.cloudflare.com/?to=/:account/workers/plans"
 echo "2. ✅ Wrangler CLI authenticated (run: npx wrangler login)"
 echo "3. ✅ An AI provider API key (Anthropic, OpenAI, Kimi, or Gemini)"
+echo "4. ✅ Cloudflare API Token with required permissions:"
+echo "   - Account Settings → Read"
+echo "   - Workers Scripts → Edit"
+echo "   - Workers KV Storage → Edit"
+echo "   - Workers Routes → Edit"
+echo "   - Workers R2 Storage → Edit"
 echo ""
 read -p "Have you completed these prerequisites? (y/n): " prereq_check
 if [ "$prereq_check" != "y" ]; then
