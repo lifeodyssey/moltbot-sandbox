@@ -65,19 +65,41 @@ This project packages OpenClaw to run in a [Cloudflare Sandbox](https://develope
 
 ## Quick Setup (Automated)
 
-Use the automated setup script for a guided configuration:
+**Option 1: Using .env file (Recommended)**
 
+1. Copy the example file and fill in your API keys:
+```bash
+cp .env.example .env
+# Edit .env and add your API keys
+```
+
+2. Run the setup script:
 ```bash
 ./setup.sh
 ```
 
-This script will:
+The script will automatically read API keys from `.env` if available.
+
+**Option 2: Interactive setup**
+
+Run the setup script without `.env` file for interactive configuration:
+```bash
+./setup.sh
+```
+
+**What the script does:**
 - ✅ Generate secure tokens automatically
-- ✅ Configure AI provider (Anthropic or OpenAI)
+- ✅ Configure AI provider (Anthropic, OpenAI, Moonshot/Kimi, or Google/Gemini)
 - ✅ Set up CDP for browser automation
 - ✅ Configure Cloudflare Access for admin UI
 - ✅ Optionally configure R2 storage
 - ✅ Deploy to Cloudflare Workers
+
+**Supported AI Providers:**
+- **Anthropic** (Claude) - Use `ANTHROPIC_API_KEY`
+- **OpenAI** (GPT) - Use `OPENAI_API_KEY`
+- **Moonshot** (Kimi Code) - Use `MOONSHOT_API_KEY`
+- **Google** (Gemini AI Studio) - Use `GOOGLE_API_KEY`
 
 Your tokens will be saved to `.tokens.txt` (not committed to git).
 

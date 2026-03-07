@@ -52,32 +52,67 @@ echo ""
 
 # Configure AI Provider
 echo "🤖 AI Provider Configuration"
-echo "Choose your AI provider:"
-echo "1) Anthropic (Claude) - Recommended"
-echo "2) OpenAI (GPT)"
-echo "3) Kimi (Moonshot AI)"
-echo "4) Google Gemini"
-read -p "Enter choice (1-4): " ai_choice
+echo ""
 
-if [ "$ai_choice" = "1" ]; then
-    read -p "Enter your Anthropic API key: " ANTHROPIC_KEY
-    echo "$ANTHROPIC_KEY" | npx wrangler secret put ANTHROPIC_API_KEY
-    echo "✅ Anthropic API key configured"
-elif [ "$ai_choice" = "2" ]; then
-    read -p "Enter your OpenAI API key: " OPENAI_KEY
-    echo "$OPENAI_KEY" | npx wrangler secret put OPENAI_API_KEY
-    echo "✅ OpenAI API key configured"
-elif [ "$ai_choice" = "3" ]; then
-    read -p "Enter your Kimi API key: " KIMI_KEY
-    echo "$KIMI_KEY" | npx wrangler secret put KIMI_API_KEY
-    echo "✅ Kimi API key configured"
-elif [ "$ai_choice" = "4" ]; then
-    read -p "Enter your Google Gemini API key: " GEMINI_KEY
-    echo "$GEMINI_KEY" | npx wrangler secret put GEMINI_API_KEY
-    echo "✅ Gemini API key configured"
+# Check if .env file exists and offer to read from it
+if [ -f ".env" ]; then
+    echo "📄 Found .env file. Would you like to:"
+    echo "1) Use API key from .env file"
+    echo "2) Enter API key manually"
+    read -p "Enter choice (1 or 2): " env_choice
+    echo ""
+fi
+
+if [ -f ".env" ] && [ "$env_choice" = "1" ]; then
+    # Read from .env file
+    echo "Reading API keys from .env..."
+    source .env
+
+    if [ -n "$ANTHROPIC_API_KEY" ]; then
+        echo "$ANTHROPIC_API_KEY" | npx wrangler secret put ANTHROPIC_API_KEY
+        echo "✅ Anthropic API key configured from .env"
+    elif [ -n "$OPENAI_API_KEY" ]; then
+        echo "$OPENAI_API_KEY" | npx wrangler secret put OPENAI_API_KEY
+        echo "✅ OpenAI API key configured from .env"
+    elif [ -n "$MOONSHOT_API_KEY" ]; then
+        echo "$MOONSHOT_API_KEY" | npx wrangler secret put MOONSHOT_API_KEY
+        echo "✅ Moonshot (Kimi) API key configured from .env"
+    elif [ -n "$GOOGLE_API_KEY" ]; then
+        echo "$GOOGLE_API_KEY" | npx wrangler secret put GOOGLE_API_KEY
+        echo "✅ Google (Gemini) API key configured from .env"
+    else
+        echo "❌ No API key found in .env file"
+        exit 1
+    fi
 else
-    echo "❌ Invalid choice"
-    exit 1
+    # Manual input
+    echo "Choose your AI provider:"
+    echo "1) Anthropic (Claude) - Recommended"
+    echo "2) OpenAI (GPT)"
+    echo "3) Moonshot (Kimi)"
+    echo "4) Google (Gemini)"
+    read -p "Enter choice (1-4): " ai_choice
+
+    if [ "$ai_choice" = "1" ]; then
+        read -p "Enter your Anthropic API key: " ANTHROPIC_KEY
+        echo "$ANTHROPIC_KEY" | npx wrangler secret put ANTHROPIC_API_KEY
+        echo "✅ Anthropic API key configured"
+    elif [ "$ai_choice" = "2" ]; then
+        read -p "Enter your OpenAI API key: " OPENAI_KEY
+        echo "$OPENAI_KEY" | npx wrangler secret put OPENAI_API_KEY
+        echo "✅ OpenAI API key configured"
+    elif [ "$ai_choice" = "3" ]; then
+        read -p "Enter your Moonshot (Kimi) API key: " MOONSHOT_KEY
+        echo "$MOONSHOT_KEY" | npx wrangler secret put MOONSHOT_API_KEY
+        echo "✅ Moonshot (Kimi) API key configured"
+    elif [ "$ai_choice" = "4" ]; then
+        read -p "Enter your Google (Gemini) API key: " GOOGLE_KEY
+        echo "$GOOGLE_KEY" | npx wrangler secret put GOOGLE_API_KEY
+        echo "✅ Google (Gemini) API key configured"
+    else
+        echo "❌ Invalid choice"
+        exit 1
+    fi
 fi
 echo ""
 
