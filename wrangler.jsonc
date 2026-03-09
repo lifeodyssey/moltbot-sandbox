@@ -59,7 +59,8 @@
   "r2_buckets": [
     {
       "binding": "MOLTBOT_BUCKET",
-      "bucket_name": "moltbot-data","preview_bucket_name": "moltbot-data",
+      "bucket_name": "moltbot-data",
+      "preview_bucket_name": "moltbot-data",
     },
   ],
 
