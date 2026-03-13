@@ -252,6 +252,15 @@ if (process.env.GOOGLE_API_KEY) {
         ]
     };
     console.log('Added Google Gemini native API provider');
+
+    // Set Main Agent default to Gemini 3.1 Pro Preview with Flash fallback
+    config.agents = config.agents || {};
+    config.agents.defaults = config.agents.defaults || {};
+    config.agents.defaults.model = {
+        primary: 'google/gemini-3.1-pro-preview',
+        fallback: 'google/gemini-3-flash-preview',
+    };
+    console.log('Set Main Agent model: primary=google/gemini-3.1-pro-preview fallback=google/gemini-3-flash-preview');
 }
 
 // Kimi Coding API provider (from OpenClaw config)

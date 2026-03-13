@@ -3,27 +3,29 @@ FROM docker.io/cloudflare/sandbox:0.7.0
 # Install Node.js 22 (required by OpenClaw) and rclone (for R2 persistence)
 # The base image has Node 20, we need to replace it with Node 22
 # Using direct binary download for reliability
-ENV NODE_VERSION=22.13.1
+ENV NODE_VERSION=22.16.0
 RUN ARCH="$(dpkg --print-architecture)" \
     && case "${ARCH}" in \
          amd64) NODE_ARCH="x64" ;; \
          arm64) NODE_ARCH="arm64" ;; \
          *) echo "Unsupported architecture: ${ARCH}" >&2; exit 1 ;; \
        esac \
-    && apt-get update && apt-get install -y xz-utils ca-certificates rclone \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends xz-utils ca-certificates rclone \
     && curl -fsSLk https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${NODE_ARCH}.tar.xz -o /tmp/node.tar.xz \
     && tar -xJf /tmp/node.tar.xz -C /usr/local --strip-components=1 \
     && rm /tmp/node.tar.xz \
+    && apt-get purge -y --auto-remove xz-utils \
+    && rm -rf /var/lib/apt/lists/* \
     && node --version \
     && npm --version
 
-# Install pnpm globally
-RUN npm install -g pnpm
-
 # Install OpenClaw (formerly clawdbot/moltbot)
 # Use latest version to get newest provider configs and bug fixes
-RUN npm install -g openclaw@latest \
-    && openclaw --version
+RUN npm install -g pnpm \
+    && npm install -g openclaw@latest --no-audit --no-fund \
+    && openclaw --version \
+    && rm -rf /root/.npm
 
 # Create OpenClaw directories
 # Legacy .clawdbot paths are kept for R2 backup migration
