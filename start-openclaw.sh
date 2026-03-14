@@ -253,13 +253,14 @@ if (process.env.GOOGLE_API_KEY) {
     };
     console.log('Added Google Gemini native API provider');
 
-    // Set Main Agent default to Gemini 3.1 Pro Preview
+    // Set Main Agent default to Gemini 3.1 Pro Preview with fallback to Gemini 3 Flash Preview
     config.agents = config.agents || {};
     config.agents.defaults = config.agents.defaults || {};
     config.agents.defaults.model = {
         primary: 'google/gemini-3.1-pro-preview',
+        fallbacks: ['google/gemini-3-flash-preview'],
     };
-    console.log('Set Main Agent model: primary=google/gemini-3.1-pro-preview');
+    console.log('Set Main Agent model: primary=google/gemini-3.1-pro-preview, fallbacks=[google/gemini-3-flash-preview]');
 }
 
 // Kimi Coding API provider (from OpenClaw config)
@@ -406,7 +407,7 @@ fi
 # Run doctor to fix any stale/invalid config keys from R2 backups
 # that would fail OpenClaw's strict Zod schema validation (exit code 1)
 echo "Running openclaw doctor to validate and fix config..."
-openclaw doctor --fix 2>&1 || echo "WARNING: openclaw doctor --fix failed, continuing anyway"
+timeout 30 openclaw doctor --fix --non-interactive 2>&1 || echo "WARNING: openclaw doctor --fix timed out or failed, continuing anyway"
 
 # ============================================================
 # START GATEWAY
